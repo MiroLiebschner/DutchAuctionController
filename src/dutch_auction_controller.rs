@@ -245,11 +245,11 @@ blueprint! {
                 offering.payment_vault.amount() * offering.percentage_liquidity
             );
 
-            let (lp_component, lp_tokens) = LPAdapter::new(token_buck, stable_buck);
+            let (_lp_adapter, lp_address, lp_tokens) = LPAdapter::new(token_buck, stable_buck);
 
             offering.liquidity_provided = true;
 
-            (lp_tokens, lp_component.address())
+            (lp_tokens, lp_address)
         }
 
         //Function for when something goes wrong with LP-provisioning so the tokens don't stay

@@ -165,32 +165,36 @@ blueprint! {
         pub fn new(
             a_tokens: Bucket,
             b_tokens: Bucket,
-        ) -> (Component, Bucket) {
-            let a_token_sym = a_tokens.resource_def().metadata().get("symbol").unwrap();
-            let b_token_sym = b_tokens.resource_def().metadata().get("symbol").unwrap();
+        ) -> (Component, Address, Bucket) {
+            let a_tokens_md = a_tokens.resource_def().metadata();
+            let b_tokens_md = b_tokens.resource_def().metadata();
+            let a_token_sym = a_tokens_md.get("symbol").unwrap();
+            let b_token_sym = b_tokens_md.get("symbol").unwrap();
 
-            let lp_name = format!("{}/{} Pool", a_token_sym, b_token_sym);
+            let lp_name = format!("{}/{} Pool", &a_token_sym, &b_token_sym);
             let lp_symbol = format!("dex-{}-{}", a_token_sym, b_token_sym);
             let lp_url = "localhost".to_string();
             let lp_fee = Decimal::from_str("0.003").unwrap();
+            let lp_amount = a_tokens.amount();
 
             let (radiswap, lp_token_buck) =  Radiswap::new(
                     a_tokens,
                     b_tokens,
-                    a_tokens.amount(),
+                    lp_amount,
                     lp_symbol,
                     lp_name,
                     lp_url,
                     lp_fee
                 );
 
+            let radiswap_addr = radiswap.address();
 
-            Self {
+            let lp_adapter = Self {
                 radiswap: radiswap.into()
             }
             .instantiate();
 
-            (radiswap, lp_token_buck)
+            (lp_adapter, radiswap_addr, lp_token_buck)
         }
     }
 }
