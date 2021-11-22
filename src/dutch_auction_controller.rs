@@ -110,7 +110,7 @@ blueprint! {
         }
 
 
-        pub fn buy(&mut self, id: u32, payment_buck: Bucket) -> Bucket {
+        pub fn buy(&mut self, id: u32, payment_buck: Bucket) -> (Bucket, Bucket) {
             scrypto_assert!(
                 self.contract_active,
                 "Contract is currently not active"
@@ -142,10 +142,20 @@ blueprint! {
             //Calculate token price
             let epochs_passed_dec: Decimal = epochs_passed.into();
             let token_price = offering.token_starting_price - epochs_passed_dec * offering.decay_rate;
-            let amount_ret = payment_buck.amount() / token_price;
+             // The amount of purchased tokens
+            let mut amount_ret = payment_buck.amount() / token_price;
+
+            // Calculate change
+            let change_buck: Bucket = Bucket::new(payment_buck.resource_def());
+            if amount_ret > offering.sales_vault.amount()  {
+                let unfilled_amount = amount_ret - offering.sales_vault.amount();
+                change_buck.put(payment_buck.take(unfilled_amount * token_price));
+                amount_ret = payment_buck.amount() / token_price;
+            }
+
 
             offering.payment_vault.put(payment_buck);
-            offering.sales_vault.take(amount_ret)
+            (offering.sales_vault.take(amount_ret), change_buck)
         }
 
         pub fn clear_offering(&mut self, badge: BucketRef) -> (Bucket, Bucket) {
